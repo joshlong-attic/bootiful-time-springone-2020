@@ -51,17 +51,6 @@ public class IntegrationApplication {
                 .handle( myCustomMessageHandler)
                 .get();
     }
-
-    private <T> T debug(T message, MessageHeaders headers) {
-        System.out.println("new message: " + message);
-        headers.keySet().forEach((k) -> System.out.println(k + ":" + headers.get(k)));
-        return message;
-    }
-
-    IntegrationConsumer myCustomIntegrationConsumer (){
-     return null;
-    }
-
 }
 
 @Log4j2
