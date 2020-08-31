@@ -18,7 +18,6 @@ import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.integration.file.dsl.FileInboundChannelAdapterSpec;
 import org.springframework.integration.file.dsl.Files;
 import org.springframework.integration.file.transformer.FileToStringTransformer;
-import org.springframework.integration.transformer.GenericTransformer;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
@@ -35,8 +34,6 @@ public class IntegrationApplication {
     public static void main(String[] args) {
         SpringApplication.run(IntegrationApplication.class, args);
     }
-
-
 }
 
 @Log4j2
@@ -86,12 +83,8 @@ class GatewayConfiguration {
     IntegrationFlow wavConversionFlow() {
         return IntegrationFlows
                 .from(wavs())
-                .transform(File.class, new GenericTransformer<File, File>() {
-                    @Override
-                    public File transform(File wav) {
-                        return AudioUtils.convert(wav, AudioUtils.deriveMp3FileForWavFile(wav));
-                    }
-                })
+                .handle(Files.outboundGateway(this.mp3Directory).autoCreateDirectory(true))
+                .transform(File.class, wav -> AudioUtils.convert(wav, AudioUtils.deriveMp3FileForWavFile(wav)))
                 .channel(mp3s())
                 .get();
     }
