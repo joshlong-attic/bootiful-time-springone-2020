@@ -7,10 +7,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.MessageSource;
 import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.test.context.MockIntegrationContext;
 import org.springframework.integration.test.context.SpringIntegrationTest;
 import org.springframework.integration.test.mock.MockIntegration;
+import org.springframework.messaging.MessageHandler;
 import org.springframework.test.context.event.annotation.AfterTestMethod;
 import org.springframework.util.FileCopyUtils;
 
@@ -19,7 +21,6 @@ import java.io.FileWriter;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Log4j2
 @SpringBootTest
@@ -36,6 +37,8 @@ class IntegrationApplicationTests {
     @Autowired
     private ApplicationContext context;
 
+    static final String MESSAGE_SOURCE_ID = "file-to-string-flow.org.springframework.integration.config.ConsumerEndpointFactoryBean#1";
+
     static final String SOURCE_POLLING_CHANNEL_ADAPTER_ID =
             "file-to-string-flow.org.springframework.integration.config.SourcePollingChannelAdapterFactoryBean#0";
 
@@ -50,22 +53,31 @@ class IntegrationApplicationTests {
 
     @Test
     public void integration() throws Exception {
-        //enumerateBeanDefinitionNames();
-        var atomicReference = new AtomicReference<String>();
-        var countDownLatch = new CountDownLatch(1);
+        enumerateBeanDefinitionNames(Object.class);
+        enumerateBeanDefinitionNames(MessageHandler.class);
+        enumerateBeanDefinitionNames(MessageSource.class);
+        var firstCountDownLatch = new CountDownLatch(1);
+        var secondCountDownLatch = new CountDownLatch(1);
         var testMessage = "test @ " + Instant.now().toString();
         var mockMessageSource = MockIntegration.mockMessageSource(init(testMessage));
+        var messageHandler = MockIntegration
+                .mockMessageHandler()
+                .handleNext(message -> {
+                    Assert.assertNotNull(message.getPayload());
+                    Assert.assertTrue(message.getPayload() instanceof String);
+                    secondCountDownLatch.countDown();
+                });
+        this.mockIntegrationContext.substituteMessageHandlerFor(MESSAGE_SOURCE_ID, messageHandler);
         this.mockIntegrationContext.substituteMessageSourceFor(SOURCE_POLLING_CHANNEL_ADAPTER_ID, mockMessageSource);
         this.output.subscribe(message -> {
             Assert.assertNotNull(message.getPayload());
-            Object payload = message.getPayload();
-            log.info("payload: " + payload);
-            Assert.assertTrue("payload is a String", message.getPayload() instanceof String);
-            atomicReference.set((String) message.getPayload());
-            countDownLatch.countDown();
+            Assert.assertTrue(message.getPayload() instanceof String);
+            firstCountDownLatch.countDown();
         });
-        countDownLatch.await();
-        Assert.assertNotNull(atomicReference.get());
+        firstCountDownLatch.await();
+        secondCountDownLatch.await();
+        log.info("done...");
+
     }
 
     @AfterTestMethod
@@ -73,9 +85,14 @@ class IntegrationApplicationTests {
         this.mockIntegrationContext.resetBeans();
     }
 
-    private void enumerateBeanDefinitionNames() {
-        String[] beanDefinitionNames = this.context.getBeanDefinitionNames();
-        for (var beanDefinitionName : beanDefinitionNames)
-            log.info(beanDefinitionName);
+    private void enumerateBeanDefinitionNames(Class<?> clazz) {
+        log.info(System.lineSeparator());
+        log.info("---------------------------------------------");
+        log.info(clazz.getName());
+        log.info("---------------------------------------------");
+        var beanNamesForType = this.context.getBeanNamesForType(clazz);
+        for (var msgHandlerBeanName : beanNamesForType) {
+            log.info(msgHandlerBeanName +':' + this.context.getBean( msgHandlerBeanName).getClass());
+        }
     }
 }
