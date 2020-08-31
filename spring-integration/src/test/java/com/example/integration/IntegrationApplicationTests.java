@@ -44,20 +44,13 @@ class IntegrationApplicationTests {
     static final String SOURCE_POLLING_CHANNEL_ADAPTER_ID =
             "file-to-string-flow.org.springframework.integration.config.SourcePollingChannelAdapterFactoryBean#0";
 
-    @SneakyThrows
-    private static File init(String message) {
-        var temp = Files.createTempFile("temp", ".txt").toFile();
-        try (var fw = new FileWriter(temp)) {
-            FileCopyUtils.copy(message, fw);
-        }
-        return temp;
-    }
-
     @Test
-    public void integration() throws Exception {
+    public void fileMessageFlowTest() throws Exception {
+
         enumerateBeanDefinitionNames(Object.class);
         enumerateBeanDefinitionNames(MessageHandler.class);
         enumerateBeanDefinitionNames(MessageSource.class);
+
         var firstCountDownLatch = new CountDownLatch(1);
         var secondCountDownLatch = new CountDownLatch(1);
         var testMessage = "test @ " + Instant.now().toString();
@@ -79,13 +72,21 @@ class IntegrationApplicationTests {
         });
         firstCountDownLatch.await();
         secondCountDownLatch.await();
-        log.info("done...");
-
+        log.info("done!");
     }
 
     @AfterTestMethod
     public void tearDown() {
         this.mockIntegrationContext.resetBeans();
+    }
+
+    @SneakyThrows
+    private static File init(String message) {
+        var temp = Files.createTempFile("temp", ".txt").toFile();
+        try (var fw = new FileWriter(temp)) {
+            FileCopyUtils.copy(message, fw);
+        }
+        return temp;
     }
 
     private void enumerateBeanDefinitionNames(Class<?> clazz) {

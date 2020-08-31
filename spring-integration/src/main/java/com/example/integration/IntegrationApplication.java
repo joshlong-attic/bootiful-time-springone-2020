@@ -35,7 +35,6 @@ public class IntegrationApplication {
         return MessageChannels.publishSubscribe().get();
     }
 
-
     @Bean(name = "file-to-string-flow")
     IntegrationFlow integrationFlow(
             MyCustomMessageHandler myCustomMessageHandler ,
@@ -48,7 +47,7 @@ public class IntegrationApplication {
         return IntegrationFlows
                 .from(messageSourceSpec, pm -> pm.poller(pc -> pc.fixedRate(100)))
                 .transform(new FileToStringTransformer())
-                .transform(String.class, s -> s.toUpperCase())
+                .transform(String.class, String::toUpperCase)
                 .channel(this.output())
                 .handle( myCustomMessageHandler)
                 .get();
