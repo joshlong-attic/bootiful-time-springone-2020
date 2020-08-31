@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import java.io.File;
 import java.util.concurrent.CompletableFuture;
@@ -61,26 +62,36 @@ class FfmpegDelegatingAudioService implements AudioService {
 
     @Async
     @Override
-    public CompletableFuture<File> convertToMp3(File input) {
-        log.info("start...");
-        var newFileFor = new File(input.getParentFile(), input.getName().substring(0, input.getName().length() - 4) + ".mp3");
-        var cb = CompletableFuture.completedFuture(convert(input, newFileFor));
-        log.info("stop...");
+    public CompletableFuture<File> convertToMp3(File wav) {
+        log.info("before...");
+        var cb = CompletableFuture.completedFuture(AudioUtils.convert(wav, AudioUtils.deriveMp3FileForWavFile(wav));
+        log.info("after...");
         return cb;
     }
 
+
+}
+
+
+@Log4j2
+abstract class AudioUtils {
+
+    public static File deriveMp3FileForWavFile(File wav) {
+        return new File(wav.getParentFile(), wav.getName().substring(0, wav.getName().length() - 4) + ".mp3");
+    }
+
     @SneakyThrows
-    private static File convert(File wav, File mp3) {
+    public static File convert(File wav, File mp3) {
+        Assert.state(!mp3.exists() || mp3.delete(), () -> "the destination .mp3 file " + mp3.getAbsolutePath() + " must not exist!");
         log.info("converting " + wav.getAbsolutePath() + " to " + mp3.getAbsolutePath() + '.');
         var command = "ffmpeg -i " + wav.getAbsolutePath() + " " + mp3.getAbsolutePath();
-        log.info("the command is " + command);
         var exec = Runtime.getRuntime().exec(command);
         var statusCode = exec.waitFor();
         if (statusCode == 0) {
+            log.info("converted " + wav.getAbsolutePath() + " to " + mp3.getAbsolutePath() + '.');
             return mp3;
         }
         throw new RuntimeException("could not convert '" + wav.getAbsolutePath() + "'!");
     }
-
 
 }
