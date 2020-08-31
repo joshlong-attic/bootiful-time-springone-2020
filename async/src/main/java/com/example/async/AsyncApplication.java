@@ -63,7 +63,8 @@ class FfmpegDelegatingAudioService implements AudioService {
     @Override
     public CompletableFuture<File> convertToMp3(File input) {
         log.info("start...");
-        var cb = CompletableFuture.completedFuture(convert(input, generateNewFileFor(input)));
+        var newFileFor = new File(input.getParentFile(), input.getName().substring(0, input.getName().length() - 4) + ".mp3");
+        var cb = CompletableFuture.completedFuture(convert(input, newFileFor));
         log.info("stop...");
         return cb;
     }
@@ -82,8 +83,4 @@ class FfmpegDelegatingAudioService implements AudioService {
     }
 
 
-    @SneakyThrows
-    private static File generateNewFileFor(File wav) {
-        return new File(wav.getParentFile(), wav.getName().substring(0, wav.getName().length() - 4) + ".mp3");
-    }
 }
