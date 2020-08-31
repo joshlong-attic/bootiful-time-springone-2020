@@ -28,6 +28,8 @@ import java.util.concurrent.CountDownLatch;
 //@LongRunningTest // <-- only activate if the RUN_LONG_INTEGRATION_TESTS env var == true
 class IntegrationApplicationTests {
 
+    private static boolean DEBUG = false;
+
     @Autowired
     private PublishSubscribeChannel output;
 
@@ -37,7 +39,7 @@ class IntegrationApplicationTests {
     @Autowired
     private ApplicationContext context;
 
-    static final String MESSAGE_SOURCE_ID = "file-to-string-flow.org.springframework.integration.config.ConsumerEndpointFactoryBean#1";
+    static final String MESSAGE_SOURCE_ID = "file-to-string-flow.org.springframework.integration.config.ConsumerEndpointFactoryBean#2";
 
     static final String SOURCE_POLLING_CHANNEL_ADAPTER_ID =
             "file-to-string-flow.org.springframework.integration.config.SourcePollingChannelAdapterFactoryBean#0";
@@ -71,6 +73,7 @@ class IntegrationApplicationTests {
         this.mockIntegrationContext.substituteMessageSourceFor(SOURCE_POLLING_CHANNEL_ADAPTER_ID, mockMessageSource);
         this.output.subscribe(message -> {
             Assert.assertNotNull(message.getPayload());
+            Assert.assertEquals(message.getPayload(), testMessage.toUpperCase());
             Assert.assertTrue(message.getPayload() instanceof String);
             firstCountDownLatch.countDown();
         });
@@ -86,13 +89,15 @@ class IntegrationApplicationTests {
     }
 
     private void enumerateBeanDefinitionNames(Class<?> clazz) {
+        if (!DEBUG) return;
+
         log.info(System.lineSeparator());
         log.info("---------------------------------------------");
         log.info(clazz.getName());
         log.info("---------------------------------------------");
         var beanNamesForType = this.context.getBeanNamesForType(clazz);
         for (var msgHandlerBeanName : beanNamesForType) {
-            log.info(msgHandlerBeanName +':' + this.context.getBean( msgHandlerBeanName).getClass());
+            log.info(msgHandlerBeanName + ':' + this.context.getBean(msgHandlerBeanName).getClass());
         }
     }
 }

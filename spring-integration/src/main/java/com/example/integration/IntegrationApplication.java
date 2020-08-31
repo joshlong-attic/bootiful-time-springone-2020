@@ -14,6 +14,7 @@ import org.springframework.integration.file.dsl.FileInboundChannelAdapterSpec;
 import org.springframework.integration.file.dsl.Files;
 import org.springframework.integration.file.transformer.FileToStringTransformer;
 import org.springframework.integration.handler.GenericHandler;
+import org.springframework.integration.transformer.GenericTransformer;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.MessageHeaders;
@@ -47,6 +48,7 @@ public class IntegrationApplication {
         return IntegrationFlows
                 .from(messageSourceSpec, pm -> pm.poller(pc -> pc.fixedRate(100)))
                 .transform(new FileToStringTransformer())
+                .transform(String.class, s -> s.toUpperCase())
                 .channel(this.output())
                 .handle( myCustomMessageHandler)
                 .get();
