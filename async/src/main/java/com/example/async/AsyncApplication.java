@@ -32,7 +32,7 @@ public class AsyncApplication {
 
     @Bean
     @Profile("!default")
-    ApplicationListener<ApplicationReadyEvent> client(AudioService audioService, @Value("file://${user.home}/Desktop/interview.wav") File interviewWav) {
+    ApplicationListener<ApplicationReadyEvent> client(FfmpegDelegatingAudioService audioService, @Value("file://${user.home}/Desktop/interview.wav") File interviewWav) {
         return event -> {
             try {
                 var fileCompletableFuture = audioService.convertToMp3(interviewWav);
