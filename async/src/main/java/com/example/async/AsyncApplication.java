@@ -16,6 +16,9 @@ import org.springframework.util.Assert;
 
 import java.io.File;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 @EnableAsync
 @SpringBootApplication
@@ -44,7 +47,6 @@ class AudioClient {
     @EventListener(ApplicationReadyEvent.class)
     public void begin() throws Exception {
         var fileCompletableFuture = audioService.convertToMp3(this.input);
-        log.info("got the CompletableFuture<File>");
         fileCompletableFuture.thenAccept(convertedFile -> log.info("new file lives at " + convertedFile.getAbsolutePath() + '.')).get();
     }
 }
@@ -53,6 +55,22 @@ class AudioClient {
 interface AudioService {
 
     CompletableFuture<File> convertToMp3(File input);
+}
+
+@Service
+class ManualAudioService implements AudioService {
+
+    private final Executor executor = Executors.newSingleThreadExecutor();
+
+    @Override
+    public CompletableFuture<File> convertToMp3(File wav) {
+        var cf = new CompletableFuture<File>();
+        this.executor.execute( ()->  {
+            var convertedFile = AudioUtils.convert(wav, AudioUtils.deriveMp3FileForWavFile(wav));
+            cf.complete( convertedFile);
+        });
+        return cf;
+    }
 }
 
 @Log4j2
@@ -64,12 +82,12 @@ class FfmpegDelegatingAudioService implements AudioService {
     @Override
     public CompletableFuture<File> convertToMp3(File wav) {
         log.info("before...");
-        var cb = CompletableFuture.completedFuture(AudioUtils.convert(wav, AudioUtils.deriveMp3FileForWavFile(wav)));
+        var convertedFile = AudioUtils.convert(wav, AudioUtils.deriveMp3FileForWavFile(wav));
+        var cb = CompletableFuture.completedFuture(convertedFile);
         log.info("after...");
         return cb;
     }
 }
-
 
 @Log4j2
 abstract class AudioUtils {

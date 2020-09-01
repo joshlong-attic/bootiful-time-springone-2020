@@ -6,8 +6,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 class AsyncApplicationTests {
 
+
+	private final AudioService audioService = new FfmpegDelegatingAudioService();
+
 	@Test
 	void contextLoads() {
+
 	}
 
 }

@@ -4,6 +4,8 @@ import com.example.reactive.GreetingRequest;
 import com.example.reactive.responder.ReactiveApplication;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.messaging.rsocket.RSocketRequester;
 import reactor.test.StepVerifier;
 
 
@@ -30,8 +32,15 @@ class ReactiveApplicationTests {
                 .create(greet)
                 .expectNextMatches(gr -> gr.getMessage().contains(greetingRequest.getName()))
                 .verifyComplete();
-        client.stop();
-        service.stop();
+        stop(client, service);
         System.out.println("exiting..");
     }
+
+    private void stop(ConfigurableApplicationContext client, ConfigurableApplicationContext service) {
+        client.getBean(RSocketRequester.class).rsocket().dispose();
+        client.stop();
+        service.stop();
+    }
+
+
 }
