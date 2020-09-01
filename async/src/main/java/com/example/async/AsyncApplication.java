@@ -64,12 +64,10 @@ class FfmpegDelegatingAudioService implements AudioService {
     @Override
     public CompletableFuture<File> convertToMp3(File wav) {
         log.info("before...");
-        var cb = CompletableFuture.completedFuture(AudioUtils.convert(wav, AudioUtils.deriveMp3FileForWavFile(wav));
+        var cb = CompletableFuture.completedFuture(AudioUtils.convert(wav, AudioUtils.deriveMp3FileForWavFile(wav)));
         log.info("after...");
         return cb;
     }
-
-
 }
 
 
