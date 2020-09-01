@@ -12,7 +12,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.stream.Stream;
 
-@Controller
 @SpringBootApplication
 public class ReactiveApplication {
 
@@ -20,6 +19,10 @@ public class ReactiveApplication {
         System.setProperty("spring.rsocket.server.port", "8888");
         SpringApplication.run(ReactiveApplication.class, args);
     }
+}
+
+@Controller
+class GreetingsController {
 
     @MessageMapping("greetings")
     Flux<GreetingResponse> greet(GreetingRequest request) {
@@ -27,5 +30,4 @@ public class ReactiveApplication {
                 .fromStream(Stream.generate(() -> new GreetingResponse("Hello, " + request.getName() + " @ " + Instant.now() + "!")))
                 .delayElements(Duration.ofSeconds(1));
     }
-
 }

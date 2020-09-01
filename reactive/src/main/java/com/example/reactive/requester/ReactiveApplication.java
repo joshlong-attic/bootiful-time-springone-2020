@@ -1,6 +1,7 @@
 package com.example.reactive.requester;
 
 import com.example.reactive.GreetingRequest;
+import com.example.reactive.GreetingResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -10,9 +11,12 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
+import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.retrosocket.EnableRSocketClients;
+import org.springframework.retrosocket.RSocketClient;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 
 @EnableRSocketClients
 @SpringBootApplication
@@ -20,7 +24,6 @@ public class ReactiveApplication {
 
     @SneakyThrows
     public static void main(String[] args) {
-
         SpringApplication.run(ReactiveApplication.class, args);
         System.in.read();
     }
@@ -33,7 +36,7 @@ public class ReactiveApplication {
 }
 
 @Log4j2
-@Profile("!default")
+//@Profile("!default")
 @Component
 @RequiredArgsConstructor
 class Runner {
@@ -49,3 +52,10 @@ class Runner {
     }
 }
 
+
+@RSocketClient
+interface GreetingClient {
+
+    @MessageMapping("greetings")
+    Flux<GreetingResponse> greet(GreetingRequest request);
+}
