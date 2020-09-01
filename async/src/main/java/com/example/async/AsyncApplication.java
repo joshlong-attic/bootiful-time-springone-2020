@@ -7,19 +7,20 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import java.io.File;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+@Log4j2
 @EnableAsync
 @SpringBootApplication
 public class AsyncApplication {
@@ -29,26 +30,20 @@ public class AsyncApplication {
         SpringApplication.run(AsyncApplication.class, args);
     }
 
-
-}
-
-@Log4j2
-@Component
-class AudioClient {
-
-    private final AudioService audioService;
-    private final File input;
-
-    AudioClient(AudioService audioService, @Value("file://${user.home}/Desktop/interview.wav") File interviewWav) {
-        this.audioService = audioService;
-        this.input = interviewWav;
+    @Bean
+    @Profile("!default")
+    ApplicationListener<ApplicationReadyEvent> client(AudioService audioService, @Value("file://${user.home}/Desktop/interview.wav") File interviewWav) {
+        return event -> {
+            try {
+                var fileCompletableFuture = audioService.convertToMp3(interviewWav);
+                fileCompletableFuture.get();
+            }
+            catch (Exception ex) {
+                log.error(ex);
+            }
+        };
     }
 
-    @EventListener(ApplicationReadyEvent.class)
-    public void begin() throws Exception {
-        var fileCompletableFuture = audioService.convertToMp3(this.input);
-        fileCompletableFuture.thenAccept(convertedFile -> log.info("new file lives at " + convertedFile.getAbsolutePath() + '.')).get();
-    }
 }
 
 
@@ -65,9 +60,9 @@ class ManualAudioService implements AudioService {
     @Override
     public CompletableFuture<File> convertToMp3(File wav) {
         var cf = new CompletableFuture<File>();
-        this.executor.execute( ()->  {
+        this.executor.execute(() -> {
             var convertedFile = AudioUtils.convert(wav, AudioUtils.deriveMp3FileForWavFile(wav));
-            cf.complete( convertedFile);
+            cf.complete(convertedFile);
         });
         return cf;
     }
