@@ -7,13 +7,9 @@ import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.MessageSource;
-import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.test.context.MockIntegrationContext;
 import org.springframework.integration.test.context.SpringIntegrationTest;
 import org.springframework.integration.test.mock.MockIntegration;
-import org.springframework.messaging.MessageHandler;
 import org.springframework.test.context.event.annotation.AfterTestMethod;
 import org.springframework.util.FileCopyUtils;
 
@@ -29,30 +25,18 @@ import java.util.concurrent.CountDownLatch;
 //@LongRunningTest // <-- only activate if the RUN_LONG_INTEGRATION_TESTS env var == true
 class IntegrationApplicationTests {
 
-    private static boolean DEBUG = false;
-
-    @Autowired
-    private PublishSubscribeChannel output;
-
     @Autowired
     private MockIntegrationContext mockIntegrationContext;
-
-    @Autowired
-    private ApplicationContext context;
-
-
 
     @Test
     public void fileMessageFlowTest() throws Exception {
 
 
-        var firstCountDownLatch = new CountDownLatch(1);
-        var secondCountDownLatch = new CountDownLatch(1);
-
+        var cdl = new CountDownLatch(1);
 
         // mock message source (replace file inbound adapter)
         var testMessage = "test @ " + Instant.now().toString();
-        var mockMessageSource = MockIntegration.mockMessageSource(init(testMessage));
+        var mockMessageSource = MockIntegration.mockMessageSource(buildTempFile(testMessage));
         this.mockIntegrationContext.substituteMessageSourceFor(
                 FileToStringFlowConfiguration.MESSAGE_SOURCE_ID, mockMessageSource);
 
@@ -62,18 +46,12 @@ class IntegrationApplicationTests {
                 .handleNext(message -> {
                     Assert.assertNotNull(message.getPayload());
                     Assert.assertTrue(message.getPayload() instanceof String);
-                    secondCountDownLatch.countDown();
+                    cdl.countDown();
                 });
+        this.mockIntegrationContext.substituteMessageHandlerFor(
+                FileToStringFlowConfiguration.MESSAGE_HANDLER_ID, messageHandler);
 
-        this.mockIntegrationContext.substituteMessageHandlerFor(FileToStringFlowConfiguration.MESSAGE_HANDLER_ID, messageHandler);
-        this.output.subscribe(message -> {
-            Assert.assertNotNull(message.getPayload());
-            Assert.assertEquals(message.getPayload(), testMessage.toUpperCase());
-            Assert.assertTrue(message.getPayload() instanceof String);
-            firstCountDownLatch.countDown();
-        });
-        firstCountDownLatch.await();
-        secondCountDownLatch.await();
+        cdl.await();
         log.info("done!");
     }
 
@@ -83,7 +61,7 @@ class IntegrationApplicationTests {
     }
 
     @SneakyThrows
-    private static File init(String message) {
+    private static File buildTempFile(String message) {
         var temp = Files.createTempFile("temp", ".txt").toFile();
         try (var fw = new FileWriter(temp)) {
             FileCopyUtils.copy(message, fw);

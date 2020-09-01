@@ -4,10 +4,8 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.integration.channel.PublishSubscribeChannel;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
-import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.integration.file.dsl.FileInboundChannelAdapterSpec;
 import org.springframework.integration.file.dsl.Files;
 import org.springframework.integration.file.transformer.FileToStringTransformer;
@@ -26,11 +24,6 @@ public class FileToStringFlowConfiguration {
     public static final String MESSAGE_HANDLER_ID = "customMessageHandlerId";
 
 
-    @Bean
-    PublishSubscribeChannel output() {
-        return MessageChannels.publishSubscribe().get();
-    }
-
     @Bean(name = "file-to-string-flow")
     IntegrationFlow integrationFlow(
             MyCustomMessageHandler myCustomMessageHandler,
@@ -44,7 +37,6 @@ public class FileToStringFlowConfiguration {
                 .from(messageSourceSpec, pm -> pm.poller(pc -> pc.fixedRate(100)).id(MESSAGE_SOURCE_ID))
                 .transform(new FileToStringTransformer())
                 .transform(String.class, String::toUpperCase)
-                .channel(this.output())
                 .handle(myCustomMessageHandler, spec -> spec.id(MESSAGE_HANDLER_ID))
                 .get();
     }
