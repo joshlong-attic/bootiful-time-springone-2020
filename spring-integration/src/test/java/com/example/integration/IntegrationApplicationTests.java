@@ -1,5 +1,6 @@
 package com.example.integration;
 
+import com.example.integration.files.FileToStringFlowConfiguration;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.junit.Assert;
@@ -39,22 +40,23 @@ class IntegrationApplicationTests {
     @Autowired
     private ApplicationContext context;
 
-    static final String MESSAGE_SOURCE_ID = "file-to-string-flow.org.springframework.integration.config.ConsumerEndpointFactoryBean#2";
 
-    static final String SOURCE_POLLING_CHANNEL_ADAPTER_ID =
-            "file-to-string-flow.org.springframework.integration.config.SourcePollingChannelAdapterFactoryBean#0";
 
     @Test
     public void fileMessageFlowTest() throws Exception {
 
-        enumerateBeanDefinitionNames(Object.class);
-        enumerateBeanDefinitionNames(MessageHandler.class);
-        enumerateBeanDefinitionNames(MessageSource.class);
 
         var firstCountDownLatch = new CountDownLatch(1);
         var secondCountDownLatch = new CountDownLatch(1);
+
+
+        // mock message source (replace file inbound adapter)
         var testMessage = "test @ " + Instant.now().toString();
         var mockMessageSource = MockIntegration.mockMessageSource(init(testMessage));
+        this.mockIntegrationContext.substituteMessageSourceFor(
+                FileToStringFlowConfiguration.MESSAGE_SOURCE_ID, mockMessageSource);
+
+        // mock messageHandler (replace MyCustomMessageHandler)
         var messageHandler = MockIntegration
                 .mockMessageHandler()
                 .handleNext(message -> {
@@ -62,8 +64,8 @@ class IntegrationApplicationTests {
                     Assert.assertTrue(message.getPayload() instanceof String);
                     secondCountDownLatch.countDown();
                 });
-        this.mockIntegrationContext.substituteMessageHandlerFor(MESSAGE_SOURCE_ID, messageHandler);
-        this.mockIntegrationContext.substituteMessageSourceFor(SOURCE_POLLING_CHANNEL_ADAPTER_ID, mockMessageSource);
+
+        this.mockIntegrationContext.substituteMessageHandlerFor(FileToStringFlowConfiguration.MESSAGE_HANDLER_ID, messageHandler);
         this.output.subscribe(message -> {
             Assert.assertNotNull(message.getPayload());
             Assert.assertEquals(message.getPayload(), testMessage.toUpperCase());
@@ -89,16 +91,4 @@ class IntegrationApplicationTests {
         return temp;
     }
 
-    private void enumerateBeanDefinitionNames(Class<?> clazz) {
-        if (!DEBUG) return;
-
-        log.info(System.lineSeparator());
-        log.info("---------------------------------------------");
-        log.info(clazz.getName());
-        log.info("---------------------------------------------");
-        var beanNamesForType = this.context.getBeanNamesForType(clazz);
-        for (var msgHandlerBeanName : beanNamesForType) {
-            log.info(msgHandlerBeanName + ':' + this.context.getBean(msgHandlerBeanName).getClass());
-        }
-    }
 }
