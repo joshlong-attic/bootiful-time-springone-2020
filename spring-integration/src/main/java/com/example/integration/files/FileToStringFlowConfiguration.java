@@ -19,10 +19,8 @@ import java.io.File;
 @Configuration
 public class FileToStringFlowConfiguration {
 
-
     public static final String MESSAGE_SOURCE_ID = "mySimpleMessageSource";
     public static final String MESSAGE_HANDLER_ID = "customMessageHandlerId";
-
 
     @Bean(name = "file-to-string-flow")
     IntegrationFlow integrationFlow(
