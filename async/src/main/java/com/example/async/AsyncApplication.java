@@ -51,6 +51,7 @@ interface AudioService {
 }
 
 @Service
+@Profile("manual")
 class ManualAudioService implements AudioService {
 
     private final Executor executor = Executors.newSingleThreadExecutor();
