@@ -4,6 +4,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.file.dsl.FileInboundChannelAdapterSpec;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 
 @Configuration
+@Profile("files")
 public class FileToStringFlowConfiguration {
 
     public static final String MESSAGE_SOURCE_ID = "mySimpleMessageSource";

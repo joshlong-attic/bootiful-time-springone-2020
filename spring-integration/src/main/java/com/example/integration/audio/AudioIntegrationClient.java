@@ -7,7 +7,7 @@ import org.springframework.messaging.handler.annotation.Payload;
 import java.io.File;
 
 @MessagingGateway
-interface AudioService {
+interface AudioIntegrationClient {
 
     @Gateway(requestChannel = GatewayConfiguration.WAVS)
     File convertToMp3(@Payload File wav);
