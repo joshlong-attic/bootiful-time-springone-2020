@@ -23,7 +23,7 @@ import java.time.Duration;
 import java.util.stream.Stream;
 
 @SpringBootApplication
-//@EnableRSocketClients
+@EnableRSocketClients
 public class RsocketDemoApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(RsocketDemoApplication.class, args);
