@@ -10,7 +10,9 @@ import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.bodyValueAndAwait
 import org.springframework.web.reactive.function.server.coRouter
+import org.springframework.web.reactive.function.server.router
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toMono
 
 @SpringBootApplication
 class CoTimeApplication
@@ -21,9 +23,18 @@ fun main(args: Array<String>) = runBlocking<Unit> {
 
 @Configuration
 class CoRouterConfiguration {
+  @Bean
+  fun dslRoute(userRepo: UserRepo) = router {
+    GET("/byId/{id}") {
+      val body = runBlocking {userRepo.byId(it.pathVariable("id")).toMono() }
+      ServerResponse
+              .ok()
+              .body(body, User::class.java)
+    }
+  }
 
   @Bean
-  fun mainRouter(userRepo: UserRepo) = coRouter {
+  fun coRoute(userRepo: UserRepo) = coRouter {
     GET("/users/{id}") {
       val body: User = userRepo.byId(it.pathVariable("id"))
       ServerResponse.ok().bodyValueAndAwait(body)
@@ -36,5 +47,5 @@ data class User(val id: String, val name: String);
 
 @Component
 class UserRepo {
-  suspend fun byId(id: String): User = Mono.just(User("1234", "SpringOne")).awaitFirst()
+  suspend fun byId(id: String): User = User("1234", "SpringOne")
 }

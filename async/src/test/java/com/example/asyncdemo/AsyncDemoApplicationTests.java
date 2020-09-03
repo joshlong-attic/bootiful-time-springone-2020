@@ -7,6 +7,30 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.File;
+import java.util.concurrent.CountDownLatch;
+
+@SpringBootTest
+class AsyncTests  {
+
+    @Autowired
+    AudioService audioService;
+
+    @Value("file://${HOME}/Desktop/sound.wav")
+    File wavFile;
+
+    @Test
+    void execIt() throws Exception {
+        var latch = new CountDownLatch(1);
+        audioService
+                .convert(wavFile)
+                .thenAccept(mp3 -> {
+                    latch.countDown();
+                    Assertions.assertTrue(mp3.exists());
+                });
+
+        latch.await();
+    }
+}
 
 @SpringBootTest
 class AsyncDemoApplicationTests {

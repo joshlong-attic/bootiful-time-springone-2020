@@ -12,7 +12,20 @@ import org.springframework.test.web.reactive.server.WebTestClient
 class CoTimeApplicationTests (@Autowired val client:WebTestClient) {
 
   @Test
-  fun contextLoads() {
+  fun testRouter() {
+    client
+            .get()
+            .uri("/byId/23232")
+            .accept(MediaType.APPLICATION_JSON)
+            .exchange()
+            .expectStatus().isOk
+            .expectBody()
+            .jsonPath("$.name")
+            .isEqualTo("SpringOne")
+  }
+
+  @Test
+  fun testCoRouter() {
     client
         .get()
         .uri("/users/23232")
