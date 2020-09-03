@@ -1,5 +1,7 @@
 package com.example.co_time
 
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.runBlocking
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -26,10 +28,10 @@ class CoRouterConfiguration {
   @Bean
   fun dslRoute(userRepo: UserRepo) = router {
     GET("/byId/{id}") {
-      val body = runBlocking {userRepo.byId(it.pathVariable("id")).toMono() }
+      val body = runBlocking {userRepo.byId(it.pathVariable("id")) }
       ServerResponse
               .ok()
-              .body(body, User::class.java)
+              .body(Mono.just(body), User::class.java)
     }
   }
 
